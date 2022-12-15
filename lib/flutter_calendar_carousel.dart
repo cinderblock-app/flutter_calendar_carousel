@@ -584,6 +584,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                   bool isPrevMonthDay = index < _startWeekday;
                   bool isNextMonthDay = index >= (DateTime(year, month + 1, 0).day) + _startWeekday;
                   bool isThisMonthDay = !isPrevMonthDay && !isNextMonthDay;
+                  bool isPrevMonth = month < DateTime.now().month && year <= DateTime.now().year;
 
                   DateTime now = DateTime(year, month, 1);
                   TextStyle? textStyle;
@@ -605,7 +606,9 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                             ? defaultTodayTextStyle
                             : isBeforeToday
                                 ? widget.earlierDaysTextStyle
-                                : defaultDaysTextStyle;
+                                : isPrevMonth
+                                    ? widget.earlierDaysTextStyle
+                                    : defaultDaysTextStyle;
                   } else if (!widget.showOnlyCurrentMonthDate) {
                     now = DateTime(year, month, index + 1 - _startWeekday);
                     textStyle = widget.nextDaysTextStyle;
