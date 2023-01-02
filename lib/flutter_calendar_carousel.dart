@@ -75,8 +75,11 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
   final TextStyle? weekendAlternativeTextStyle;
   final EventList<T>? markedDatesMap;
 
-  /// Change `makredDateWidget` when `markedDateShowIcon` is set to false.
+  /// Change `markedDateWidget` when `markedDateShowIcon` is set to false.
   final Widget? markedDateWidget;
+
+  /// Change `markedDateWidget` when `markedDateShowIcon` is set to false and 'isSelectedDay' is set to true.
+  final Widget? markedTodayWidget;
 
   /// Change `OutlinedBorder` when `markedDateShowIcon` is set to false.
   final OutlinedBorder? markedDateCustomShapeBorder;
@@ -181,6 +184,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
     this.markedDateCustomTextStyle,
     this.markedDateMoreCustomTextStyle,
     this.markedDateWidget,
+    this.markedTodayWidget,
     this.multipleMarkedDates,
     this.headerMargin = const EdgeInsets.symmetric(vertical: 16.0),
     this.childAspectRatio = 1.0,
@@ -501,14 +505,14 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
           child: Stack(
             children: widget.showIconBehindDayText
                 ? <Widget>[
-                    widget.markedDatesMap != null ? _renderMarkedMapContainer(now) : Container(),
+                    widget.markedDatesMap != null ? _renderMarkedMapContainer(now, isSelectedDay) : Container(),
                     getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
                         defaultTextStyle, isNextMonthDay, isThisMonthDay, now),
                   ]
                 : <Widget>[
                     getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
                         defaultTextStyle, isNextMonthDay, isThisMonthDay, now),
-                    widget.markedDatesMap != null ? _renderMarkedMapContainer(now) : Container(),
+                    widget.markedDatesMap != null ? _renderMarkedMapContainer(now, isSelectedDay) : Container(),
                   ],
           ),
         ),
@@ -859,10 +863,10 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
     }
   }
 
-  Widget _renderMarkedMapContainer(DateTime now) {
+  Widget _renderMarkedMapContainer(DateTime now, bool isSelectedDay) {
     if (widget.markedDateShowIcon) {
       return Stack(
-        children: _renderMarkedMap(now),
+        children: _renderMarkedMap(now, isSelectedDay),
       );
     } else {
       return Container(
@@ -872,16 +876,17 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: _renderMarkedMap(now),
+          children: _renderMarkedMap(now, isSelectedDay),
         ),
       );
     }
   }
 
-  List<Widget> _renderMarkedMap(DateTime now) {
+  List<Widget> _renderMarkedMap(DateTime now, bool isSelectedDay) {
     final markedEvents = widget.markedDatesMap?.getEvents(now) ?? [];
     final markedDateIconBuilder = widget.markedDateIconBuilder;
     final markedDateWidget = widget.markedDateWidget;
+    final markedTodayWidget = widget.markedTodayWidget;
     final markedDateMoreShowTotal = widget.markedDateMoreShowTotal;
     final markedDateMoreCustomTextStyle = widget.markedDateMoreCustomTextStyle;
     final markedDateIconMargin = widget.markedDateIconMargin;
@@ -962,6 +967,8 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
               final dot = event.getDot();
               if (dot != null) {
                 tmp.add(dot);
+              } else if (markedDateWidget != null && markedTodayWidget != null) {
+                isSelectedDay ? tmp.add(markedTodayWidget) : tmp.add(markedDateWidget);
               } else if (markedDateWidget != null) {
                 tmp.add(markedDateWidget);
               } else {
