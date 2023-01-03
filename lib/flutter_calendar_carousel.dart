@@ -404,6 +404,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
     bool isSelectedDay,
     bool isToday,
     bool isPrevMonthDay,
+    bool isPrevMonth,
     TextStyle? textStyle,
     TextStyle defaultTextStyle,
     bool isNextMonthDay,
@@ -423,7 +424,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
             child: Text(
               '${now.day}',
               semanticsLabel: now.day.toString(),
-              style: getDayStyle(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
+              style: getDayStyle(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, isPrevMonth, textStyle,
                   defaultTextStyle, isNextMonthDay, isThisMonthDay, now),
               maxLines: 1,
             ),
@@ -439,6 +440,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
     bool isSelectedDay,
     bool isToday,
     bool isPrevMonthDay,
+    bool isPrevMonth,
     TextStyle? textStyle,
     TextStyle defaultTextStyle,
     bool isNextMonthDay,
@@ -506,11 +508,11 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
             children: widget.showIconBehindDayText
                 ? <Widget>[
                     widget.markedDatesMap != null ? _renderMarkedMapContainer(now, isSelectedDay) : Container(),
-                    getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
+                    getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, isPrevMonth, textStyle,
                         defaultTextStyle, isNextMonthDay, isThisMonthDay, now),
                   ]
                 : <Widget>[
-                    getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
+                    getDayContainer(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, isPrevMonth, textStyle,
                         defaultTextStyle, isNextMonthDay, isThisMonthDay, now),
                     widget.markedDatesMap != null ? _renderMarkedMapContainer(now, isSelectedDay) : Container(),
                   ],
@@ -631,7 +633,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                   if (now.millisecondsSinceEpoch < minDate.millisecondsSinceEpoch)
                     isSelectable = false;
                   else if (now.millisecondsSinceEpoch > maxDate.millisecondsSinceEpoch) isSelectable = false;
-                  return renderDay(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
+                  return renderDay(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, isPrevMonth, textStyle,
                       defaultTextStyle, isNextMonthDay, isThisMonthDay, now);
                 }),
               ),
@@ -685,6 +687,9 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                         this._selectedDate.month == weekDays[index].month &&
                         this._selectedDate.day == weekDays[index].day;
                     bool isPrevMonthDay = weekDays[index].month < this._targetDate.month;
+                    bool isPrevMonth =
+                        (weekDays[index].month < DateTime.now().month && weekDays[index].year == DateTime.now().year) ||
+                            (weekDays[index].year < DateTime.now().year);
                     bool isNextMonthDay = weekDays[index].month > this._targetDate.month;
                     bool isThisMonthDay = !isPrevMonthDay && !isNextMonthDay;
 
@@ -715,8 +720,8 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                     if (now.millisecondsSinceEpoch < minDate.millisecondsSinceEpoch)
                       isSelectable = false;
                     else if (now.millisecondsSinceEpoch > maxDate.millisecondsSinceEpoch) isSelectable = false;
-                    return renderDay(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, textStyle,
-                        defaultTextStyle, isNextMonthDay, isThisMonthDay, now);
+                    return renderDay(isSelectable, index, isSelectedDay, isToday, isPrevMonthDay, isPrevMonth,
+                        textStyle, defaultTextStyle, isNextMonthDay, isThisMonthDay, now);
                   }),
                 ),
               ),
@@ -1016,8 +1021,18 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                     : defaultTextStyle;
   }
 
-  TextStyle? getDayStyle(bool isSelectable, int index, bool isSelectedDay, bool isToday, bool isPrevMonthDay,
-      TextStyle? textStyle, TextStyle defaultTextStyle, bool isNextMonthDay, bool isThisMonthDay, DateTime now) {
+  TextStyle? getDayStyle(
+      bool isSelectable,
+      int index,
+      bool isSelectedDay,
+      bool isToday,
+      bool isPrevMonthDay,
+      bool isPrevMonth,
+      TextStyle? textStyle,
+      TextStyle defaultTextStyle,
+      bool isNextMonthDay,
+      bool isThisMonthDay,
+      DateTime now) {
     // If day is in multiple selection get its style(if available)
     bool isMultipleMarked = widget.multipleMarkedDates?.isMarked(now) ?? false;
     TextStyle? mutipleMarkedTextStyle = widget.multipleMarkedDates?.getTextStyle(now);
@@ -1033,7 +1048,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                     isThisMonthDay &&
                     !isToday
                 ? (isSelectable
-                    ? isBeforeToday && widget.weekendAlternativeTextStyle != null
+                    ? (isBeforeToday || isPrevMonth) && widget.weekendAlternativeTextStyle != null
                         ? widget.weekendAlternativeTextStyle
                         : widget.weekendTextStyle
                     : widget.inactiveWeekendTextStyle)
@@ -1048,8 +1063,18 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                                 : widget.daysTextStyle;
   }
 
-  Widget getDayContainer(bool isSelectable, int index, bool isSelectedDay, bool isToday, bool isPrevMonthDay,
-      TextStyle? textStyle, TextStyle defaultTextStyle, bool isNextMonthDay, bool isThisMonthDay, DateTime now) {
+  Widget getDayContainer(
+      bool isSelectable,
+      int index,
+      bool isSelectedDay,
+      bool isToday,
+      bool isPrevMonthDay,
+      bool isPrevMonth,
+      TextStyle? textStyle,
+      TextStyle defaultTextStyle,
+      bool isNextMonthDay,
+      bool isThisMonthDay,
+      DateTime now) {
     final customDayBuilder = widget.customDayBuilder;
 
     Widget? dayContainer;
@@ -1062,6 +1087,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
         isSelectedDay,
         isToday,
         isPrevMonthDay,
+        isPrevMonth,
         textStyle,
         defaultTextStyle,
         isNextMonthDay,
@@ -1082,6 +1108,7 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
           isSelectedDay,
           isToday,
           isPrevMonthDay,
+          isPrevMonth,
           textStyle,
           defaultTextStyle,
           isNextMonthDay,
