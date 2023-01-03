@@ -46,6 +46,7 @@ typedef Widget WeekdayBuilder(int weekday, String weekdayName);
 class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
   final double viewportFraction;
   final TextStyle? prevDaysTextStyle;
+  final TextStyle earlierDaysTextStyle;
   final TextStyle? daysTextStyle;
   final TextStyle? nextDaysTextStyle;
   final Color prevMonthDayBorderColor;
@@ -71,6 +72,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
   final TextStyle? headerTextStyle;
   final String? headerText;
   final TextStyle? weekendTextStyle;
+  final TextStyle? weekendAlternativeTextStyle;
   final EventList<T>? markedDatesMap;
 
   /// Change `markedDateWidget` when `markedDateShowIcon` is set to false.
@@ -143,6 +145,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
     this.viewportFraction = 1.0,
     this.prevDaysTextStyle,
     this.daysTextStyle,
+    this.earlierDaysTextStyle = defaultPrevDaysTextStyle,
     this.nextDaysTextStyle,
     this.prevMonthDayBorderColor = Colors.transparent,
     this.thisMonthDayBorderColor = Colors.transparent,
@@ -167,6 +170,7 @@ class CalendarCarousel<T extends EventInterface> extends StatefulWidget {
     this.headerTextStyle,
     this.headerText,
     this.weekendTextStyle,
+    this.weekendAlternativeTextStyle = defaultPrevDaysTextStyle,
     this.markedDatesMap,
     this.markedDateShowIcon = false,
     this.markedDateIconBorderColor,
@@ -574,6 +578,9 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                   bool isToday = DateTime.now().day == index + 1 - _startWeekday &&
                       DateTime.now().month == month &&
                       DateTime.now().year == year;
+                  bool isBeforeToday = DateTime.now().day > index + 1 - _startWeekday &&
+                      DateTime.now().month == month &&
+                      DateTime.now().year == year;
                   bool isSelectedDay = selectedDateTime != null &&
                       selectedDateTime.year == year &&
                       selectedDateTime.month == month &&
@@ -600,7 +607,9 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                         ? defaultSelectedDayTextStyle
                         : isToday
                             ? defaultTodayTextStyle
-                            : defaultDaysTextStyle;
+                            : isBeforeToday
+                                ? widget.earlierDaysTextStyle
+                                : defaultDaysTextStyle;
                   } else if (!widget.showOnlyCurrentMonthDate) {
                     now = DateTime(year, month, index + 1 - _startWeekday);
                     textStyle = widget.nextDaysTextStyle;
@@ -1009,6 +1018,8 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
     bool isMultipleMarked = widget.multipleMarkedDates?.isMarked(now) ?? false;
     TextStyle? mutipleMarkedTextStyle = widget.multipleMarkedDates?.getTextStyle(now);
 
+    bool isBeforeToday = DateTime.now().day > index + 1 - _startWeekday;
+
     return isSelectedDay && widget.selectedDayTextStyle != null
         ? widget.selectedDayTextStyle
         : isMultipleMarked
@@ -1017,7 +1028,11 @@ class _CalendarState<T extends EventInterface> extends State<CalendarCarousel<T>
                     !isSelectedDay &&
                     isThisMonthDay &&
                     !isToday
-                ? (isSelectable ? widget.weekendTextStyle : widget.inactiveWeekendTextStyle)
+                ? (isSelectable
+                    ? isBeforeToday && widget.weekendAlternativeTextStyle != null
+                        ? widget.weekendAlternativeTextStyle
+                        : widget.weekendTextStyle
+                    : widget.inactiveWeekendTextStyle)
                 : !isSelectable
                     ? widget.inactiveDaysTextStyle
                     : isPrevMonthDay
